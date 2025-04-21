@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Will you be my boyfriend?</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive;
+      text-align: center;
+      margin-top: 50px;
+      background-color: #fff0f5;
+      overflow-x: hidden;
+    }
+    h1 {
+      font-size: 2.5rem;
+      color: #ff69b4;
+    }
+    .gif-container {
+      margin: 20px 0;
+    }
+    .gif-container img {
+      width: 150px;
+      height: auto;
+      border-radius: 20px;
+    }
+    .btn {
+      padding: 1em 2em;
+      margin: 20px;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .yes-wrapper {
+      display: inline-block;
+      animation: throb 1.2s infinite;
+      transform-origin: center;
+    }
+    #yesBtn {
+      background-color: #ff1493;
+      color: white;
+    }
+    #noBtn {
+      background-color: #d3d3d3;
+      color: #333;
+    }
+    #finalScreen {
+      display: none;
+      margin-top: 30px;
+    }
+    #capturedImage {
+      max-width: 300px;
+      margin-top: 20px;
+      border-radius: 20px;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    @keyframes throb {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Will you be my boyfriend?</h1>
+  <div class="gif-container">
+    <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjRpY21iYmJmd3o0ejR6d21lbHN0Nmx6ZTJ1bjFmY3h6cGpnbzN0NCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ts0Uy1zVJTvCo/giphy.gif" alt="Sad Hello Kitty" />
+  </div>
+  <div class="button-container">
+    <div class="yes-wrapper">
+      <button class="btn" id="yesBtn">ABSOLUTELY YES</button>
+    </div>
+    <button class="btn" id="noBtn">noo :(</button>
+  </div>
+
+  <div id="finalScreen">
+    <h2>Happily ever after 💕</h2>
+    <img id="capturedImage" src="" alt="His lovely face" />
+  </div>
+
+  <canvas id="confettiCanvas" class="confetti"></canvas>
+
+  <script>
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn = document.getElementById('noBtn');
+    const finalScreen = document.getElementById('finalScreen');
+    const capturedImage = document.getElementById('capturedImage');
+    const buttonContainer = document.querySelector('.button-container');
+    const confettiCanvas = document.getElementById('confettiCanvas');
+    const confettiCtx = confettiCanvas.getContext('2d');
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+
+    let yesSize = 1;
+    const noTexts = [
+      "yaaah 😢", 
+      "yakin nih?", 
+      "gamau berubah pikiran ya? :()", 
+      "coba pikirin lagi deh..",
+      "bisa jadi seru lho~", 
+      "sayang banget kalo ngelewatin aku", 
+      "kasih aku kesempatan dong 🥺", 
+      "please dipikirin lagi yaa",
+      "aku tungguin kok..", 
+      "aku bawa bunga nih 💐", 
+      "kesempatan terakhir niii..", 
+      "okelah... tapi kamu bakal nyesel 😢"
+    ];
+
+    noBtn.addEventListener('click', () => {
+      yesSize += 0.3;
+      yesBtn.style.transform = `scale(${yesSize})`;
+
+      const newText = noTexts[Math.floor(Math.random() * noTexts.length)];
+      noBtn.innerText = newText;
+
+      if (yesSize > 3.5) {
+        noBtn.style.display = 'none';
+      }
+    });
+
+    yesBtn.addEventListener('click', () => {
+      finalScreen.style.display = 'block';
+      document.querySelector('.yes-wrapper').style.display = 'none';
+      noBtn.style.display = 'none';
+      launchGlitter();
+
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          const video = document.createElement('video');
+          video.srcObject = stream;
+          video.play();
+
+          setTimeout(() => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0);
+            const imageUrl = canvas.toDataURL('image/png');
+            capturedImage.src = imageUrl;
+            stream.getTracks().forEach(track => track.stop());
+          }, 1500);
+        })
+        .catch(err => alert('KASIH AKSES KAMERANYA DONG GANTEEENG'));
+    });
+
+    function launchGlitter() {
+      const confettiPieces = [];
+      const colors = ['#ff69b4', '#fff0f5', '#ffb6c1', '#ffe4e1', '#ffc0cb'];
+      for (let i = 0; i < 150; i++) {
+        confettiPieces.push({
+          x: Math.random() * confettiCanvas.width,
+          y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+          radius: Math.random() * 6 + 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          speed: Math.random() * 3 + 2,
+          sway: Math.random() * 2
+        });
+      }
+
+      function drawConfetti() {
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        confettiPieces.forEach(p => {
+          confettiCtx.beginPath();
+          confettiCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          confettiCtx.fillStyle = p.color;
+          confettiCtx.fill();
+          p.y += p.speed;
+          p.x += Math.sin(p.y * 0.05) * p.sway;
+        });
+        requestAnimationFrame(drawConfetti);
+      }
+      drawConfetti();
+    }
+  </script>
+</body>
+</html>

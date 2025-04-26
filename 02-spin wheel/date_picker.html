@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Date Roulette</title>
+  <style>
+    @keyframes zoomBounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    body {
+      font-family: 'Comic Sans MS', cursive;
+      background-image: url('bg3.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      padding: 50px;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 50px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      width: 100%;
+      text-align: center;
+      color: #ff69b4;
+      font-size: 2.5rem;
+      text-shadow: 1px 1px 3px #fff;
+      animation: zoomBounce 2s ease-in-out infinite;
+      display: inline-block;
+    }
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #canvasWheel {
+      border: 10px solid #ffaad1;
+      border-radius: 50%;
+      display: block;
+      background-color: #fff;
+    }
+    #spinBtn {
+      padding: 1em 2em;
+      background-color: #ffaad1;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 30px;
+    }
+    #spinBtn:hover {
+      background-color: #ff69b4;
+    }
+    #ideaForm {
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 30px;
+      border-radius: 20px;
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    #ideaInput {
+      padding: 0.5em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+    #addIdeaBtn {
+      color: white;
+      margin-top: 10px;
+      padding: 0.5em 1em;
+      background-color: #ffaad1;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #addIdeaBtn:hover {
+      background-color: #ff69b4;
+    }
+    ul#ideaList {
+      list-style: none;
+      padding: 0;
+      margin-top: 10px;
+    }
+    ul#ideaList li {
+      display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px dotted #eee;
+    font-size: 1.1rem;
+    }
+    ul#ideaList button {
+      margin-left: 10px;
+      background: none;
+      color: #ff8d9e;
+      border: none;
+      cursor: pointer;
+    }
+    canvas#glitter {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      text-align: center;
+      z-index: 10000;
+      display: none;
+    }
+    .popup h2 {
+      color: #ff69b4;
+    }
+    .popup button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .save-btn {
+      background-color: #ff69b4;
+      color: white;
+    }
+    .remove-btn {
+      background-color: #ffaad1;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>FIRST DATEEE</h1>
+  <div class="left-panel">
+    <canvas id="canvasWheel" width="500" height="500"></canvas>
+    <button id="spinBtn">SPIN!</button>
+  </div>
+  <div id="ideaForm">
+    <input id="ideaInput" type="text" placeholder="Add new idea...">
+    <button id="addIdeaBtn">Add</button>
+    <ul id="ideaList"></ul>
+  </div>
+
+  <div class="popup" id="popup">
+    <h2 id="popupText"></h2>
+    <button class="save-btn" onclick="saveResult()">Save The Date</button>
+    <button class="remove-btn" onclick="removeResult()">Remove & Spin Again</button>
+  </div>
+
+  <canvas id="glitter"></canvas>
+  <audio id="spinSound" src="spinning-wheel.mp3"></audio>
+
+  <script>
+    const canvas = document.getElementById("canvasWheel")
+    const ctx = canvas.getContext("2d")
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+    const radius = canvas.width / 2
+
+    let ideas = [
+      "Lunch (me) 🍴🙍‍♀️",
+      "Netflix, no chill 🙏🏻",
+      "Photobooth 📷",
+      "@ Lembang ⛰️",
+      "Mole until glory 👾",
+      "Studyyyy 🤓"
+    ];
+
+    const spinBtn = document.getElementById('spinBtn');
+    const glitter = document.getElementById('glitter');
+    const gCtx = glitter.getContext('2d');
+    const ideaInput = document.getElementById('ideaInput');
+    const addIdeaBtn = document.getElementById('addIdeaBtn');
+    const ideaList = document.getElementById('ideaList');
+    const spinSound = document.getElementById('spinSound');
+    const popup = document.getElementById('popup');
+    const popupText = document.getElementById('popupText');
+
+    glitter.width = window.innerWidth;
+    glitter.height = window.innerHeight;
+
+    function drawWheel(items, currentDeg = 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const step = 360 / items.length;
+      for (let i = 0; i < items.length; i++) {
+        const startAngle = toRad(currentDeg + i * step);
+        const endAngle = toRad(currentDeg + (i + 1) * step);
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = i % 2 === 0 ? '#ffaad1' : '#fff';
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(toRad(currentDeg + i * step + step / 2));
+        ctx.textAlign = "center";
+        ctx.fillStyle = i % 2 === 0 ? '#fff' : '#ffaad1';
+        ctx.font = 'bold 16px Comic Sans MS';
+        ctx.fillText(items[i], radius - 70, 10);
+        ctx.restore();
+      }
+    }
+
+    function toRad(deg) {
+      return deg * (Math.PI / 180.0);
+    }
+
+    let rotation = 0;
+    let chosenIndex = 0;
+    function spin() {
+      if (ideas.length === 0) return;
+
+      const step = 360 / ideas.length;
+      chosenIndex = Math.floor(Math.random() * ideas.length);
+      const targetAngle = 360 * 5 + (360 - (chosenIndex * step + step / 2));
+      let start = null;
+
+      let duration = 9000; 
+
+      spinSound.currentTime = 0;
+      spinSound.play();
+
+      function animate(timestamp) {
+        if (!start) start = timestamp;
+        const progress = timestamp - start;
+        const easing = Math.min(progress / duration, 1);
+        rotation = targetAngle * easing;
+        drawWheel(ideas, rotation);
+        if (easing < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          popupText.textContent = `Our next date will be: ${ideas[chosenIndex]} 💖`;
+          popup.style.display = 'block';
+          launchGlitter();
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function saveResult() {
+      const link = document.createElement('a');
+      link.download = 'first-date-coupon.png';
+      link.href = 'DateCoupon.png'; 
+      link.click();
+
+      popup.style.display = 'none';
+    }
+
+
+    function removeResult() {
+      ideas.splice(chosenIndex, 1);
+      popup.style.display = 'none';
+      drawWheel(ideas);
+      updateIdeaList();
+    }
+
+    function updateIdeaList() {
+      ideaList.innerHTML = '';
+      ideas.forEach((idea, i) => {
+        const li = document.createElement('li');
+        li.textContent = idea;
+        const btn = document.createElement('button');
+        btn.textContent = 'x';
+        btn.onclick = () => {
+          ideas.splice(i, 1);
+          drawWheel(ideas);
+          updateIdeaList();
+        };
+        li.appendChild(btn);
+        ideaList.appendChild(li);
+      });
+    }
+
+    addIdeaBtn.addEventListener('click', () => {
+      const newIdea = ideaInput.value.trim();
+      if (newIdea) {
+        ideas.push(newIdea);
+        ideaInput.value = '';
+        drawWheel(ideas);
+        updateIdeaList();
+      }
+    });
+
+    spinBtn.addEventListener('click', spin);
+
+    const particles = [];
+    function launchGlitter() {
+      for (let i = 0; i < 100; i++) {
+        particles.push({
+          x: Math.random() * glitter.width,
+          y: Math.random() * glitter.height,
+          r: Math.random() * 4 + 1,
+          dx: (Math.random() - 0.5) * 4,
+          dy: (Math.random() - 0.5) * 4,
+          alpha: 1
+        });
+      }
+      animateGlitter();
+    }
+
+    function animateGlitter() {
+      gCtx.clearRect(0, 0, glitter.width, glitter.height);
+      particles.forEach((p, i) => {
+        p.x += p.dx;
+        p.y += p.dy;
+        p.alpha -= 0.01;
+        gCtx.beginPath();
+        gCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        gCtx.fillStyle = `rgba(255, 182, 193, ${p.alpha})`;
+        gCtx.fill();
+      });
+      requestAnimationFrame(animateGlitter);
+    }
+
+    drawWheel(ideas);
+    updateIdeaList();
+  </script>
+</body>
+</html>

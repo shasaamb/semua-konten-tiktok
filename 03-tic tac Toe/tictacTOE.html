@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TicTacTOE</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive;
+      background-image: url('bg.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      color: #ff66b2;
+      text-shadow: 1px 1px #fff;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .cell {
+      background: #fff0f5;
+      border: 2px solid #ffb6c1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 15px;
+    }
+    .cell img {
+      max-width: 80px;
+      max-height: 80px;
+    }
+    .status {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      color: #d63384;
+    }
+    button {
+      margin-top: 15px;
+      background-color: #ff99cc;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+    }
+    #nameForm {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(255, 182, 193, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #nameForm input {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ff99cc;
+      width: 200px;
+      text-align: center;
+    }
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 10;
+      text-align: center;
+    }
+    .emoji-trail {
+      position: absolute;
+      pointer-events: none;
+      animation: floatUp 2s linear forwards;
+      font-size: 2rem;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-100px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="nameForm">
+    <h2>Jenengan Sopo (Jarwo)?</h2>
+    <input id="name1" placeholder="Ngaran 1" />
+    <input id="name2" placeholder="Ngaran 2" />
+    <button onclick="startGame()">Mulai Yah!</button>
+  </div>
+
+  <h1>TicTacJempol</h1>
+  <div class="board" id="board"></div>
+  <div class="status" id="status"></div>
+  <button onclick="resetBoard()">Riset</button>
+
+  <div class="popup" id="winnerPopup">
+    <h2 id="winnerMessage"></h2>
+    <button onclick="resetBoard(); hidePopup();">Play Lagi</button>
+  </div>
+
+  <audio id="clickSound" src="https://www.myinstants.com/media/sounds/button-click.mp3"></audio>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+    const board = document.getElementById('board');
+    const status = document.getElementById('status');
+    const clickSound = document.getElementById('clickSound');
+    const player1Img = 'char1-bf.png';
+    const player2Img = 'char2-me.png';
+    const nameForm = document.getElementById('nameForm');
+    const name1Input = document.getElementById('name1');
+    const name2Input = document.getElementById('name2');
+    const popup = document.getElementById('winnerPopup');
+    const winnerMessage = document.getElementById('winnerMessage');
+    let name1 = "Player 1";
+    let name2 = "Player 2";
+    let currentPlayer = 1;
+    let boardState = Array(9).fill(null);
+    let gameOver = false;
+
+    function startGame() {
+      name1 = name1Input.value.trim() || "Player 1";
+      name2 = name2Input.value.trim() || "Player 2";
+      nameForm.style.display = 'none';
+      createBoard();
+    }
+
+    function createBoard() {
+      board.innerHTML = '';
+      boardState = Array(9).fill(null);
+      gameOver = false;
+      currentPlayer = 1;
+      status.textContent = `Giliran ${name1} Dulu`;
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = i;
+        cell.addEventListener('click', handleMove);
+        board.appendChild(cell);
+      }
+    }
+
+    function handleMove(e) {
+      const index = e.target.dataset.index;
+      if (boardState[index] || gameOver) return;
+
+      const img = document.createElement('img');
+      img.src = currentPlayer === 1 ? player1Img : player2Img;
+      e.target.appendChild(img);
+      boardState[index] = currentPlayer;
+
+      clickSound.currentTime = 0;
+      clickSound.play().catch(() => {});
+      launchEmoji(e.pageX, e.pageY);
+
+      if (checkWinner()) {
+        const winner = currentPlayer === 1 ? name1 : name2;
+        winnerMessage.textContent = currentPlayer === 1 
+          ? 'IHHH CURANG, ULANG LAGII'  
+          : 'YAAAY ACA MENANG'; 
+        popup.style.display = 'block';
+        confetti();
+        gameOver = true;
+      } else if (boardState.every(cell => cell)) {
+        winnerMessage.textContent = 'Gaada yang menang :) Indonesia yang menang';
+        popup.style.display = 'block';
+        gameOver = true;
+      } else {
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+        status.textContent = `Giliran ${currentPlayer === 1 ? name1 : name2}`;
+      }
+    }
+
+    function checkWinner() {
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      return winPatterns.some(pattern => {
+        const [a,b,c] = pattern;
+        return boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c];
+      });
+    }
+
+    function resetBoard() {
+      createBoard();
+    }
+
+    function hidePopup() {
+      popup.style.display = 'none';
+    }
+
+    function launchEmoji(x, y) {
+      const emoji = document.createElement('div');
+      emoji.className = 'emoji-trail';
+      emoji.style.left = `${x}px`;
+      emoji.style.top = `${y}px`;
+      emoji.textContent = Math.random() > 0.5 ? '💖' : '✨';
+      document.body.appendChild(emoji);
+      setTimeout(() => emoji.remove(), 2000);
+    }
+  </script>
+</body>
+</html>
